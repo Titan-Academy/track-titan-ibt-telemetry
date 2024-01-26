@@ -1,6 +1,6 @@
 {
-  "name": "ibt-telemetry",
-  "version": "1.1.1",
+  "name": "@titan-academy/track-titan-ibt-telemetry",
+  "version": "0.0.1",
   "description": "iRacing ibt parser",
   "keywords": [
     "iracing",
@@ -10,10 +10,6 @@
   ],
   "author": "Steven Inskip",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/SkippyZA/ibt-telemetry.git"
-  },
   "main": "lib/index.js",
   "scripts": {
     "compile": "npm run lint && babel -d lib/ src/",
@@ -33,5 +29,8 @@
     "babel-preset-stage-0": "^6.24.1",
     "standard": "^10.0.2",
     "dependency-cruiser": "6.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@titan-academy"
   }
 }

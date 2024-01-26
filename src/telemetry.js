@@ -17,7 +17,13 @@ export default class Telemetry {
   constructor (telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd) {
     this.headers = telemetryHeader
     this.diskHeaders = diskSubHeader
-    this.sessionInfo = yaml.safeLoad(sessionInfo)
+
+    const sanitizedSessionInfo = sessionInfo.replace(
+      // eslint-disable-next-line no-control-regex
+      /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
+      ''
+    )
+    this.sessionInfo = yaml.safeLoad(sanitizedSessionInfo)
 
     fileDescriptor.set(this, fd)
     variableHeaders.set(this, varHeaders)
@@ -41,21 +47,6 @@ export default class Telemetry {
   }
 
   /**
-   * Generate a unique key for the telemetry session.
-   *
-   * The unique key is a combination of 3 fields:
-   *   accountId-sessionId-subSessionId
-   *
-   * @return string
-   */
-  uniqueId () {
-    const accountId = this.sessionInfo.DriverInfo.Drivers[this.sessionInfo.DriverInfo.DriverCarIdx].UserID
-    const sessionId = this.sessionInfo.WeekendInfo.SessionID
-    const subSessionId = this.sessionInfo.WeekendInfo.SubSessionID
-    return `${accountId}-${sessionId}-${subSessionId}`
-  }
-
-  /**
    * Telemetry samples generator.
    */
   * samples () {
@@ -67,7 +58,7 @@ export default class Telemetry {
     const buffer = Buffer.alloc(length)
 
     while (hasSample) {
-      const start = this.headers.bufOffset + (count++ * length)
+      const start = this.headers.bufOffset + count++ * length
       const bytesRead = fs.readSync(fd, buffer, 0, length, start)
 
       if (bytesRead !== length) {
