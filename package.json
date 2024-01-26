@@ -1,6 +1,6 @@
 {
   "name": "@titan-academy/track-titan-ibt-telemetry",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "iRacing ibt parser",
   "keywords": [
     "iracing",
@@ -18,7 +18,7 @@
     "prepublish": "npm run compile"
   },
   "dependencies": {
-    "js-yaml": "^3.8.4",
+    "js-yaml": "^4.1.0",
     "ramda": "^0.24.1",
     "rxjs": "^6.0.0"
   },

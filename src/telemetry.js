@@ -20,10 +20,10 @@ export default class Telemetry {
 
     const sanitizedSessionInfo = sessionInfo.replace(
       // eslint-disable-next-line no-control-regex
-      /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
+      /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g,
       ''
     )
-    this.sessionInfo = yaml.safeLoad(sanitizedSessionInfo)
+    this.sessionInfo = yaml.load(sanitizedSessionInfo)
 
     fileDescriptor.set(this, fd)
     variableHeaders.set(this, varHeaders)
