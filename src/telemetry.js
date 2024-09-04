@@ -7,6 +7,19 @@ import telemetryFileLoader from './utils/telemetry-file-loader'
 const variableHeaders = new WeakMap()
 const fileDescriptor = new WeakMap()
 
+function handleMultilineStrings(sessionInfo) {
+  // Correctly handle multiline values with block scalar and proper indentation
+  sessionInfo = sessionInfo.replace(
+    /:\s*\|\n\s*([^\n]+(\n[^\n]+)+)/g,
+    function (match, value) {
+      // Format only multiline values with block scalars
+      return `: |\n  ${value.replace(/\n/g, '\n  ')}`
+    }
+  )
+
+  return sessionInfo
+}
+
 /**
  * iRacing Telemetry
  */
@@ -23,7 +36,10 @@ export default class Telemetry {
       /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g,
       ''
     )
-    this.sessionInfo = yaml.load(sanitizedSessionInfo)
+
+    const handledMultilineStringsSessionInfo = handleMultilineStrings(sanitizedSessionInfo)
+
+    this.sessionInfo = yaml.load(handledMultilineStringsSessionInfo)
 
     fileDescriptor.set(this, fd)
     variableHeaders.set(this, varHeaders)
