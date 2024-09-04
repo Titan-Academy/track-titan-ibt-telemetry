@@ -7,7 +7,7 @@ import telemetryFileLoader from './utils/telemetry-file-loader'
 const variableHeaders = new WeakMap()
 const fileDescriptor = new WeakMap()
 
-function handleMultilineStrings(sessionInfo) {
+function handleMultilineStrings (sessionInfo) {
   // Correctly handle multiline values with block scalar and proper indentation
   sessionInfo = sessionInfo.replace(
     /:\s*\|\n\s*([^\n]+(\n[^\n]+)+)/g,
@@ -15,9 +15,9 @@ function handleMultilineStrings(sessionInfo) {
       // Format only multiline values with block scalars
       return `: |\n  ${value.replace(/\n/g, '\n  ')}`
     }
-  );
+  )
 
-  return sessionInfo;
+  return sessionInfo
 }
 
 /**
