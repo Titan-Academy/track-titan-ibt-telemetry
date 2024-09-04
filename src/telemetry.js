@@ -20,19 +20,6 @@ function handleMultilineStrings(sessionInfo) {
   return sessionInfo;
 }
 
-function handleMultilineStrings(sessionInfo) {
-  // Correctly handle multiline values with block scalar and proper indentation
-  sessionInfo = sessionInfo.replace(
-    /:\s*\|\n\s*([^\n]+(\n[^\n]+)+)/g,
-    function (match, value) {
-      // Format only multiline values with block scalars
-      return `: |\n  ${value.replace(/\n/g, '\n  ')}`
-    }
-  )
-
-  return sessionInfo
-}
-
 /**
  * iRacing Telemetry
  */
