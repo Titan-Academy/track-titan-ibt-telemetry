@@ -1,23 +1,54 @@
-import fs from 'fs'
-import yaml from 'js-yaml'
+import fs from "fs";
+import yaml from "js-yaml";
 
-import TelemetrySample from './telemetry-sample'
-import telemetryFileLoader from './utils/telemetry-file-loader'
+import TelemetrySample from "./telemetry-sample";
+import telemetryFileLoader from "./utils/telemetry-file-loader";
 
-const variableHeaders = new WeakMap()
-const fileDescriptor = new WeakMap()
+const variableHeaders = new WeakMap();
+const fileDescriptor = new WeakMap();
 
-function handleMultilineStrings (sessionInfo) {
-  // Correctly handle multiline values with block scalar and proper indentation
-  sessionInfo = sessionInfo.replace(
-    /:\s*\|\n\s*([^\n]+(\n[^\n]+)+)/g,
-    function (match, value) {
-      // Format only multiline values with block scalars
-      return `: |\n  ${value.replace(/\n/g, '\n  ')}`
-    }
-  )
+/**
+ * Handles and fixes common YAML formatting issues before parsing.
+ */
+export function preprocessYAML(content) {
+  let modifiedContent = content;
 
-  return sessionInfo
+  // Fixing colons & missing values
+  modifiedContent = modifiedContent.replace(
+    /(\n\s*[A-Za-z_]+)(\s+)([A-Za-z0-9_]+)/g,
+    "$1: $3"
+  );
+
+  // Ensuring list items are well formatted
+  modifiedContent = modifiedContent.replace(
+    /-\s*([A-Za-z0-9_]+):\s*([^\n]+)/g,
+    "- $1:\n    $2"
+  );
+
+  // Checking for indentation issues
+  modifiedContent = modifiedContent.replace(
+    /([a-zA-Z0-9_]+):\s*([^\n]+)\s+([a-zA-Z0-9_]+):/g,
+    "$1: $2\n$3:"
+  );
+
+  // Removing invalid characters...
+  modifiedContent = modifiedContent.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
+
+  // Removing lines that cause YAML errors and replacing them with dummy key-value pairs
+  modifiedContent = modifiedContent
+    .split("\n")
+    .map((line) => {
+      if (
+        line.includes(",") ||
+        line.match(/\b[A-Za-z0-9_]+\s+[A-Za-z0-9_]+:/)
+      ) {
+        return "unknown: null";
+      }
+      return line;
+    })
+    .join("\n");
+
+  return modifiedContent;
 }
 
 /**
@@ -27,60 +58,68 @@ export default class Telemetry {
   /**
    * Telemetry constructor.
    */
-  constructor (telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd) {
-    this.headers = telemetryHeader
-    this.diskHeaders = diskSubHeader
+  constructor(telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd) {
+    this.headers = telemetryHeader;
+    this.diskHeaders = diskSubHeader;
 
+    // Remove control characters before any further processing
     const sanitizedSessionInfo = sessionInfo.replace(
-      // eslint-disable-next-line no-control-regex
       /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x80-\x9F]/g,
-      ''
-    )
+      ""
+    );
 
-    const handledMultilineStringsSessionInfo = handleMultilineStrings(sanitizedSessionInfo)
+    const preprocessedSessionInfo = preprocessYAML(sanitizedSessionInfo);
 
-    this.sessionInfo = yaml.load(handledMultilineStringsSessionInfo)
+    try {
+      this.sessionInfo = yaml.load(preprocessedSessionInfo);
+    } catch (e) {
+      const errorMessage = `YAML Parsing Error at line ${
+        e.mark && e.mark.line ? e.mark.line : "unknown"
+      }: ${e.message}`;
 
-    fileDescriptor.set(this, fd)
-    variableHeaders.set(this, varHeaders)
+      throw new Error(errorMessage);
+    }
+
+    fileDescriptor.set(this, fd);
+    variableHeaders.set(this, varHeaders);
   }
 
   /**
    * Instantiate a Telemetry instance from the contents of an ibt file
    *
-   * @param file path to *.ibt file
-   * @return Telemetry instance of telemetry
+   * @param {string} file - Path to *.ibt file
+   * @return {Promise<Telemetry>} Instance of telemetry
    */
-  static fromFile (file) {
-    return telemetryFileLoader(file)
+  static fromFile(file) {
+    return telemetryFileLoader(file);
   }
 
   /**
-   * Telemetry variable headers.
+   * Get variable headers.
    */
-  get varHeaders () {
-    return variableHeaders.get(this)
+  get varHeaders() {
+    return variableHeaders.get(this);
   }
 
   /**
    * Telemetry samples generator.
    */
-  * samples () {
-    let hasSample = true
-    let count = 0
+  *samples() {
+    let hasSample = true;
+    let count = 0;
 
-    const fd = fileDescriptor.get(this)
-    const length = this.headers.bufLen
-    const buffer = Buffer.alloc(length)
+    const fd = fileDescriptor.get(this);
+    const length = this.headers.bufLen;
+    const buffer = Buffer.alloc(length);
 
     while (hasSample) {
-      const start = this.headers.bufOffset + count++ * length
-      const bytesRead = fs.readSync(fd, buffer, 0, length, start)
+      const start = this.headers.bufOffset + count++ * length;
+      const bytesRead = fs.readSync(fd, buffer, 0, length, start);
 
       if (bytesRead !== length) {
-        hasSample = false
+        hasSample = false;
       } else {
-        yield new TelemetrySample(buffer, this.varHeaders)
+        yield new TelemetrySample(buffer, this.varHeaders);
       }
     }
   }
