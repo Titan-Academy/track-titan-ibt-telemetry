@@ -132,17 +132,17 @@ const variables = {
 
   irsdk_CarLeftRight: {
     irsdk_LROff: 0,
-    irsdk_LRClear: 1,        // no cars around us
-    irsdk_LRCarLeft: 2,      // there is a car to our left
-    irsdk_LRCarRight: 3,     // there is a car to our right
+    irsdk_LRClear: 1, // no cars around us
+    irsdk_LRCarLeft: 2, // there is a car to our left
+    irsdk_LRCarRight: 3, // there is a car to our right
     irsdk_LRCarLeftRight: 4, // there are cars on each side
-    irsdk_LR2CarsLeft: 5,    // there are two cars to our left
-    irsdk_LR2CarsRight: 6    // there are two cars to our right
+    irsdk_LR2CarsLeft: 5, // there are two cars to our left
+    irsdk_LR2CarsRight: 6 // there are two cars to our right
   },
 
   irsdk_CameraState: {
     irsdk_IsSessionScreen: 0x0001, // the camera tool can only be activated if viewing the session screen (out of car)
-    irsdk_IsScenicActive: 0x0002,  // the scenic camera is active (no focus car)
+    irsdk_IsScenicActive: 0x0002, // the scenic camera is active (no focus car)
 
     // these can be changed with a broadcast message
     irsdk_CamToolActive: 0x0004,

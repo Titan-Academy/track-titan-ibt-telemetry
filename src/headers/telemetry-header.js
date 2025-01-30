@@ -40,7 +40,7 @@ class TelemetryHeader {
         return accum
       } else {
         const a = buffer.slice(start, start + size).readInt32LE()
-        return telemetryPartsFromBuffer(buffer, size, start + size, [ ...accum, a ])
+        return telemetryPartsFromBuffer(buffer, size, start + size, [...accum, a])
       }
     }
 
