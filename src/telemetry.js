@@ -10,40 +10,43 @@ const fileDescriptor = new WeakMap();
 /**
  * Handles and fixes common YAML formatting issues before parsing.
  */
-function preprocessYAML(content) {
+export function preprocessYAML(content) {
   let modifiedContent = content;
 
-  // Fix missing colons in key-value pairs
+  // Fixing colons & missing values
   modifiedContent = modifiedContent.replace(
-    /(\n\s*[A-Za-z_]+\b)(\s*)(\n|$)/g,
-    "$1: null$3"
+    /(\n\s*[A-Za-z_]+)(\s+)([A-Za-z0-9_]+)/g,
+    "$1: $3"
   );
 
-  // Handle malformed list items and remove trailing commas
-  modifiedContent = modifiedContent.replace(/,\s*(\n\s*-)/g, "\n$1");
-  modifiedContent = modifiedContent.replace(/,\s*(\n\s*[A-Z])/g, "\n$1");
-
-  // Fix broken lines with improper indentation
+  // Ensuring list items are well formatted
   modifiedContent = modifiedContent.replace(
-    /(\S+)\s*\n\s*([A-Z])/g,
-    "$1\n  $2"
+    /-\s*([A-Za-z0-9_]+):\s*([^\n]+)/g,
+    "- $1:\n    $2"
   );
 
-  // Remove non-printable control characters
+  // Checking for indentation issues
+  modifiedContent = modifiedContent.replace(
+    /([a-zA-Z0-9_]+):\s*([^\n]+)\s+([a-zA-Z0-9_]+):/g,
+    "$1: $2\n$3:"
+  );
+
+  // Removing invalid characters...
   modifiedContent = modifiedContent.replace(/[\x00-\x1F\x7F-\x9F]/g, "");
 
-  // Fix cases where values are missing after a key (assume null)
-  modifiedContent = modifiedContent.replace(
-    /:\s*\n\s*([A-Z][a-z]+:)/g,
-    ": null\n$1"
-  );
-  modifiedContent = modifiedContent.replace(/(\w+):\s*,\s*/g, '$1: "unknown",');
-
-  // Ensure values with special characters (e.g., commas) are quoted
-  modifiedContent = modifiedContent.replace(
-    /:\s*([^"\n][^,\n]*,[^"\n]*)\n/g,
-    ': "$1"\n'
-  );
+  // Removing lines that cause YAML errors and replacing them with dummy key-value pairs
+  modifiedContent = modifiedContent
+    .split("\n")
+    .map((line) => {
+      if (
+        line.includes(",") ||
+        line.match(/\b[A-Za-z0-9_]+\s+[A-Za-z0-9_]+:/)
+      ) {
+        return "unknown: null";
+      }
+      return line;
+    })
+    .join("\n");
 
   return modifiedContent;
 }
@@ -71,7 +74,7 @@ export default class Telemetry {
       this.sessionInfo = yaml.load(preprocessedSessionInfo);
     } catch (e) {
       const errorMessage = `YAML Parsing Error at line ${
-        e.mark?.line || "unknown"
+        e.mark && e.mark.line ? e.mark.line : "unknown"
       }: ${e.message}`;
 
       throw new Error(errorMessage);
