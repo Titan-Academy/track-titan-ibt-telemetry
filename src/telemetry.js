@@ -77,7 +77,7 @@ export default class Telemetry {
       this.sessionInfo = yaml.load(preprocessedSessionInfo)
     } catch (e) {
       const errorMessage = `YAML Parsing Error at line ${
-        e.mark?.line ?? 'unknown'
+        e.mark && e.mark.line ? e.mark.line : 'unknown'
       }: ${e.message}`
 
       throw new Error(errorMessage)
