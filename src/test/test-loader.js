@@ -1,5 +1,5 @@
-import yaml from "js-yaml";
-import { preprocessYAML } from "../telemetry";
+import yaml from 'js-yaml'
+import { preprocessYAML } from '../telemetry'
 
 const brokenYAML = `
 SessionInfo:
@@ -48,22 +48,22 @@ SessionInfo:
         - 32.5
         - ,  #Unexpected comma in list
 
-`;
+`
 
 try {
-  console.log("Applying Preprocessing...");
-  const cleanedYAML = preprocessYAML(brokenYAML);
+  console.log('Applying Preprocessing...')
+  const cleanedYAML = preprocessYAML(brokenYAML)
 
-  console.log("Parsing YAML...");
-  const parsedData = yaml.load(cleanedYAML);
+  console.log('Parsing YAML...')
+  const parsedData = yaml.load(cleanedYAML)
 
-  console.log("YAML Parsed Successfully!");
-  console.log(parsedData);
+  console.log('YAML Parsed Successfully!')
+  console.log(parsedData)
 } catch (e) {
   console.error(
-    "YAML Parsing Error at line",
-    e.mark && e.mark.line ? e.mark.line : "unknown",
-    ":",
+    'YAML Parsing Error at line',
+    e.mark && e.mark.line ? e.mark.line : 'unknown',
+    ':',
     e.message
-  );
+  )
 }
