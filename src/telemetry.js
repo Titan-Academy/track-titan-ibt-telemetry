@@ -31,11 +31,11 @@ export function preprocessYAML (content) {
     '$1: $2\n$3:'
   )
 
-  // Removing invalid characters...
-  modifiedContent = modifiedContent.replace(
-    /[\u0000-\u001F\u007F-\u009F]/g,
-    ''
-  )
+  // **Safe way** to remove control characters
+  modifiedContent = modifiedContent
+    .split('')
+    .filter((char) => char.charCodeAt(0) > 31 || char === '\n')
+    .join('')
 
   // Removing lines that cause YAML errors and replacing them with dummy key-value pairs
   modifiedContent = modifiedContent
@@ -65,11 +65,11 @@ export default class Telemetry {
     this.headers = telemetryHeader
     this.diskHeaders = diskSubHeader
 
-    // Remove control characters before any further processing
-    const sanitizedSessionInfo = sessionInfo.replace(
-      /[\u0000-\u001F\u007F-\u009F]/g,
-      ''
-    )
+    // **Safe way** to remove control characters
+    const sanitizedSessionInfo = sessionInfo
+      .split('')
+      .filter((char) => char.charCodeAt(0) > 31 || char === '\n')
+      .join('')
 
     const preprocessedSessionInfo = preprocessYAML(sanitizedSessionInfo)
 
@@ -77,7 +77,7 @@ export default class Telemetry {
       this.sessionInfo = yaml.load(preprocessedSessionInfo)
     } catch (e) {
       const errorMessage = `YAML Parsing Error at line ${
-        e.mark && e.mark.line ? e.mark.line : 'unknown'
+        e.mark?.line ?? 'unknown'
       }: ${e.message}`
 
       throw new Error(errorMessage)
