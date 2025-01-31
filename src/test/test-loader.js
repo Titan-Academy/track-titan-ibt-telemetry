@@ -1,5 +1,5 @@
-import yaml from 'js-yaml'
-import { preprocessYAML } from '../telemetry'
+import yaml from "js-yaml";
+import { preprocessYAML } from "../telemetry";
 
 const brokenYAML = `
 SessionInfo:
@@ -48,22 +48,61 @@ SessionInfo:
         - 32.5
         - ,  #Unexpected comma in list
 
-`
+`;
 
 try {
-  console.log('Applying Preprocessing...')
-  const cleanedYAML = preprocessYAML(brokenYAML)
+  console.log("Applying Preprocessing...");
+  let cleanedYAML = preprocessYAML(brokenYAML);
 
-  console.log('Parsing YAML...')
-  const parsedData = yaml.load(cleanedYAML)
+  console.log("Parsing YAML...");
+  let parsedData;
 
-  console.log('YAML Parsed Successfully!')
-  console.log(parsedData)
-} catch (e) {
-  console.error(
-    'YAML Parsing Error at line',
-    e.mark && e.mark.line ? e.mark.line : 'unknown',
-    ':',
-    e.message
-  )
+  let attempt = 0;
+  const maxAttempts = 5; // Avoid infinite loops
+
+  while (attempt < maxAttempts) {
+    try {
+      parsedData = yaml.load(cleanedYAML);
+      console.log("✅ YAML Parsed Successfully!");
+      console.log(parsedData);
+      break; // Exit loop if parsing succeeds
+    } catch (e) {
+      attempt++;
+      const lineNumber = e.mark && e.mark.line ? e.mark.line : "unknown";
+      console.warn(`⚠️ YAML Parsing Error at line ${lineNumber}: ${e.message}`);
+
+      let yamlLines = cleanedYAML.split("\n");
+
+      if (lineNumber !== "unknown" && yamlLines[lineNumber]) {
+        let faultyLine = yamlLines[lineNumber];
+        console.warn(`🛠 Replacing faulty line: ${faultyLine}`);
+
+        // Preserve indentation level
+        const indentation = faultyLine.match(/^(\s*)/)[0];
+
+        if (faultyLine.includes(":") && !faultyLine.includes(",")) {
+          // If the error is a misplaced mapping key (missing colon)
+          faultyLine = faultyLine.replace(/(\S+)\s+(\S+)/, "$1: $2");
+        } else if (faultyLine.trim().startsWith("-")) {
+          // If the error is a list item, replace with a valid list item
+          faultyLine = `${indentation}- null`;
+        } else if (faultyLine.includes(",")) {
+          // If the error is a misplaced comma, remove it
+          faultyLine = faultyLine.replace(",", "");
+        } else {
+          // Default: Replace with a dummy entry (without breaking lists)
+          faultyLine = `${indentation}unknown_entry_${lineNumber}: null`;
+        }
+
+        yamlLines[lineNumber] = faultyLine;
+      } else {
+        console.warn("❌ Could not determine faulty line, stopping...");
+        throw e; // If we can't fix it, stop processing
+      }
+
+      cleanedYAML = yamlLines.join("\n"); // Reassemble YAML after replacement
+    }
+  }
+} catch (finalError) {
+  console.error("❌ Fatal YAML Error:", finalError.message);
 }
