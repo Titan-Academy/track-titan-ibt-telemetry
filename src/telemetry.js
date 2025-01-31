@@ -11,47 +11,37 @@ const fileDescriptor = new WeakMap()
  * Handles and fixes common YAML formatting issues before parsing.
  */
 export function preprocessYAML (content) {
-  let modifiedContent = content
-
-  // Fixing colons & missing values
-  modifiedContent = modifiedContent.replace(
-    /(\n\s*[A-Za-z_]+)(\s+)([A-Za-z0-9_]+)/g,
-    '$1: $3'
-  )
-
-  // Ensuring list items are well formatted
-  modifiedContent = modifiedContent.replace(
-    /-\s*([A-Za-z0-9_]+):\s*([^\n]+)/g,
-    '- $1:\n    $2'
-  )
-
-  // Checking for indentation issues
-  modifiedContent = modifiedContent.replace(
-    /([a-zA-Z0-9_]+):\s*([^\n]+)\s+([a-zA-Z0-9_]+):/g,
-    '$1: $2\n$3:'
-  )
-
-  // **Safe way** to remove control characters
-  modifiedContent = modifiedContent
-    .split('')
-    .filter((char) => char.charCodeAt(0) > 31 || char === '\n')
-    .join('')
-
-  // Removing lines that cause YAML errors and replacing them with dummy key-value pairs
-  modifiedContent = modifiedContent
+  return content
     .split('\n')
-    .map((line) => {
-      if (
-        line.includes(',') ||
-        line.match(/\b[A-Za-z0-9_]+\s+[A-Za-z0-9_]+:/)
-      ) {
-        return 'unknown: null'
+    .map((line, index, lines) => {
+      const trimmedLine = line.trim()
+
+      // Replace invalid key-value pairs with just a comma as a value
+      if (trimmedLine.match(/^([A-Za-z0-9_]+):\s*,\s*$/)) {
+        return line.replace(/:\s*,\s*$/, ': unknown')
       }
+
+      // Remove lines that start with an invalid character (e.g., ", E")
+      if (trimmedLine.startsWith(',') || trimmedLine.match(/^\s*,\s*\S/)) {
+        console.warn(`🛠 Removing invalid line: ${line}`)
+        return '' // Remove this line
+      }
+
+      // Detect missing colons in key-value pairs and fix them
+      if (
+        trimmedLine.match(/^\s*[A-Za-z0-9_]+\s*$/) &&
+        lines[index + 1] &&
+        lines[index + 1].trim().match(/^[A-Za-z0-9_]+:/)
+      ) {
+        const indentation = line.match(/^(\s*)/)[0]
+        console.warn(`🛠 Fixing missing colon in: ${line}`)
+        return `${indentation}${trimmedLine}: unknown`
+      }
+
       return line
     })
+    .filter(Boolean)
     .join('\n')
-
-  return modifiedContent
 }
 
 /**
