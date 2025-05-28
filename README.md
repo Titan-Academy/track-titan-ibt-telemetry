@@ -1,4 +1,6 @@
 # iRacing Telemetry Parser
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FTitan-Academy%2Ftrack-titan-ibt-telemetry.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FTitan-Academy%2Ftrack-titan-ibt-telemetry?ref=badge_shield)
+
 
 Yup, that's right, this is a Node.js library for processing iRacing's ibt telemetry files.
 
@@ -68,3 +70,7 @@ samples$
   .subscribe(s => console.log(s.toJSON()))
 ```
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FTitan-Academy%2Ftrack-titan-ibt-telemetry.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FTitan-Academy%2Ftrack-titan-ibt-telemetry?ref=badge_large)
