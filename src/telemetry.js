@@ -38,6 +38,11 @@ export function preprocessYAML (content) {
         return `${indentation}${trimmedLine}: unknown`
       }
 
+      // Wrap values containing @ in quotes to prevent YAML parsing errors (only if not already quoted)
+      if (trimmedLine.match(/^([A-Za-z0-9_]+):\s*.*@.*$/) && !trimmedLine.match(/^([A-Za-z0-9_]+):\s*".*"$/)) {
+        return line.replace(/^(\s*)([A-Za-z0-9_]+):\s*(.*)$/, '$1$2: "$3"')
+      }
+
       return line
     })
     .filter(Boolean)

@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run Current File (Babel)",
+      "program": "${file}",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--require", "babel-register"],
+      "console": "integratedTerminal",
+      "sourceMaps": true
+    }
+  ]
+}
