@@ -8,57 +8,16 @@ const variableHeaders = new WeakMap()
 const fileDescriptor = new WeakMap()
 
 /**
- * Handles and fixes common YAML formatting issues before parsing.
- */
-export function preprocessYAML (content) {
-  return content
-    .split('\n')
-    .map((line, index, lines) => {
-      const trimmedLine = line.trim()
-
-      // Replace invalid key-value pairs with just a comma as a value
-      if (trimmedLine.match(/^([A-Za-z0-9_]+):\s*,\s*$/)) {
-        return line.replace(/:\s*,\s*$/, ': unknown')
-      }
-
-      // Remove lines that start with an invalid character (e.g., ", E")
-      if (trimmedLine.startsWith(',') || trimmedLine.match(/^\s*,\s*\S/)) {
-        console.warn(`🛠 Removing invalid line: ${line}`)
-        return '' // Remove this line
-      }
-
-      // Detect missing colons in key-value pairs and fix them
-      if (
-        trimmedLine.match(/^\s*[A-Za-z0-9_]+\s*$/) &&
-        lines[index + 1] &&
-        lines[index + 1].trim().match(/^[A-Za-z0-9_]+:/)
-      ) {
-        const indentation = line.match(/^(\s*)/)[0]
-        console.warn(`🛠 Fixing missing colon in: ${line}`)
-        return `${indentation}${trimmedLine}: unknown`
-      }
-
-      // Wrap values containing @ in quotes to prevent YAML parsing errors (only if not already quoted)
-      if (trimmedLine.match(/^([A-Za-z0-9_]+):\s*.*@.*$/) && !trimmedLine.match(/^([A-Za-z0-9_]+):\s*".*"$/)) {
-        return line.replace(/^(\s*)([A-Za-z0-9_]+):\s*(.*)$/, '$1$2: "$3"')
-      }
-
-      return line
-    })
-    .filter(Boolean)
-    .join('\n')
-}
-
-/**
  * iRacing Telemetry
  */
 export default class Telemetry {
   /**
    * Telemetry constructor.
    */
-  constructor (telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd) {
+  constructor (telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd, preprocessYAML) {
     this.headers = telemetryHeader
     this.diskHeaders = diskSubHeader
+    this.preprocessYAML = preprocessYAML
 
     // **Safe way** to remove control characters
     const sanitizedSessionInfo = sessionInfo
@@ -66,7 +25,7 @@ export default class Telemetry {
       .filter((char) => char.charCodeAt(0) > 31 || char === '\n')
       .join('')
 
-    const preprocessedSessionInfo = preprocessYAML(sanitizedSessionInfo)
+    const preprocessedSessionInfo = this.preprocessYAML(sanitizedSessionInfo)
 
     try {
       this.sessionInfo = yaml.load(preprocessedSessionInfo)
@@ -86,10 +45,11 @@ export default class Telemetry {
    * Instantiate a Telemetry instance from the contents of an ibt file
    *
    * @param {string} file - Path to *.ibt file
+   * @param {function} preprocessYAML - Function which preprocesses the YAML
    * @return {Promise<Telemetry>} Instance of telemetry
    */
-  static fromFile (file) {
-    return telemetryFileLoader(file)
+  static fromFile (file, preprocessYAML) {
+    return telemetryFileLoader(file, preprocessYAML)
   }
 
   /**

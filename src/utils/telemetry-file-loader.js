@@ -42,7 +42,7 @@ const varHeadersFromFileDescriptor = (fd, telemetryHeader) => {
     })
 }
 
-const telemetryFileLoader = (file) => {
+const telemetryFileLoader = (file, preprocessYAML) => {
   return openDataFile(file)
     .then(fd => {
       const headers = [
@@ -56,7 +56,7 @@ const telemetryFileLoader = (file) => {
             sessionInfoStringFromFileDescriptor(fd, telemetryHeader),
             varHeadersFromFileDescriptor(fd, telemetryHeader)
           ]).then(([sessionInfo, varHeaders]) => {
-            return new Telemetry(telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd)
+            return new Telemetry(telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd, preprocessYAML)
           })
         })
     })
