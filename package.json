@@ -1,6 +1,6 @@
 {
   "name": "@titan-academy/track-titan-ibt-telemetry",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "iRacing ibt parser",
   "keywords": [
     "iracing",

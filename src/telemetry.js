@@ -60,25 +60,41 @@ export default class Telemetry {
   }
 
   /**
-   * Telemetry samples generator.
+   * Get all telemetry samples.
    */
-  * samples () {
-    let hasSample = true
-    let count = 0
-
+  samples () {
     const fd = fileDescriptor.get(this)
-    const length = this.headers.bufLen
-    const buffer = Buffer.alloc(length)
-
-    while (hasSample) {
-      const start = this.headers.bufOffset + count++ * length
-      const bytesRead = fs.readSync(fd, buffer, 0, length, start)
-
-      if (bytesRead !== length) {
-        hasSample = false
-      } else {
-        yield new TelemetrySample(buffer, this.varHeaders)
-      }
+    const sampleLength = this.headers.bufLen
+    
+    // Get file stats to determine total file size
+    const stats = fs.fstatSync(fd)
+    const fileSize = stats.size
+    
+    // Calculate total bytes available for samples
+    const totalSampleBytes = fileSize - this.headers.bufOffset
+    const sampleCount = Math.floor(totalSampleBytes / sampleLength)
+    
+    if (sampleCount <= 0) {
+      return []
     }
+    
+    // Read entire buffer from start of samples
+    const entireBuffer = Buffer.alloc(totalSampleBytes)
+    const bytesRead = fs.readSync(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
+    
+    if (bytesRead !== totalSampleBytes) {
+      throw new Error(`Failed to read expected bytes. Expected: ${totalSampleBytes}, Read: ${bytesRead}`)
+    }
+    
+    // Split buffer into individual samples
+    const samples = []
+    for (let i = 0; i < sampleCount; i++) {
+      const start = i * sampleLength
+      const end = start + sampleLength
+      const sampleBuffer = entireBuffer.slice(start, end)
+      samples.push(new TelemetrySample(sampleBuffer, this.varHeaders))
+    }
+    
+    return samples
   }
 }
