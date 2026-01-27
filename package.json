@@ -13,7 +13,7 @@
   "main": "lib/index.js",
   "scripts": {
     "compile": "npm run lint && babel -d lib/ src/",
-    "lint": "standard -v \"src/**/*.js\"",
+    "lint": "standard --fix -v \"src/**/*.js\"",
     "test:dependencies": "depcruise --validate .dependency-cruiser.js src",
     "prepublish": "npm run compile"
   },

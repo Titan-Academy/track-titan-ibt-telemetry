@@ -8,11 +8,11 @@ export default class TelemetrySample {
   constructor (buff, varHeaders) {
     this._buff = buff
     variableHeaders.set(this, varHeaders)
-    
+
     // Create case-insensitive parameter lookup map for O(1) access
     const paramMap = new Map(varHeaders.map(h => [h.name.toLowerCase(), h]))
     parameterMaps.set(this, paramMap)
-    
+
     // Create DataView for efficient buffer reading
     const view = new DataView(buff.buffer, buff.byteOffset, buff.byteLength)
     dataViews.set(this, view)
@@ -28,7 +28,9 @@ export default class TelemetrySample {
 
     const variable = Irsdk.varType[header.type]
     const view = dataViews.get(this)
-    
+
+    const fallbackValueBuffer = this._buff.slice(header.offset, header.offset + variable.size)
+
     // Use DataView for efficient reading without creating buffer slices
     let value
     switch (variable.jsBufferMethod) {
@@ -58,14 +60,13 @@ export default class TelemetrySample {
         break
       default:
         // Fallback to original method if unknown type
-        const valueBuffer = this._buff.slice(header.offset, header.offset + variable.size)
-        value = valueBuffer[variable.jsBufferMethod]()
+        value = fallbackValueBuffer[variable.jsBufferMethod]()
     }
 
     return {
       name: header.name,
       description: header.description,
-      value: value,
+      value,
       unit: header.unit
     }
   }
@@ -73,7 +74,7 @@ export default class TelemetrySample {
   toJSON () {
     const headers = variableHeaders.get(this)
     const result = {}
-    
+
     for (const header of headers) {
       const param = this.getParam(header.name)
       if (param) {
@@ -83,7 +84,7 @@ export default class TelemetrySample {
         }
       }
     }
-    
+
     return result
   }
 }
