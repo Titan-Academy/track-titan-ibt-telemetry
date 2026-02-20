@@ -103,7 +103,7 @@ export default class Telemetry {
   /**
    * Get the number of telemetry samples without loading data into memory.
    */
-  samplesLength () {
+  getSamplesLength () {
     if (this.samplesLength) return this.samplesLength
 
     const fd = fileDescriptor.get(this)
@@ -131,7 +131,7 @@ export default class Telemetry {
   sampleAt (index) {
     const fd = fileDescriptor.get(this)
     const sampleLength = this.headers.bufLen
-    const sampleCount = this.samplesLength ?? this.samplesLength()
+    const sampleCount = this.samplesLength ? this.samplesLength : this.samplesLength()
 
     if (index < 0 || index >= sampleCount) {
       throw new Error(`Sample index ${index} is out of bounds. Valid range: 0 to ${sampleCount - 1}`)
