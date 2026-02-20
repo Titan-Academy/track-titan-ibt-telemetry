@@ -14,6 +14,8 @@ export default class Telemetry {
   /**
    * Telemetry constructor.
    */
+  samplesLength = undefined
+
   constructor (telemetryHeader, diskSubHeader, sessionInfo, varHeaders, fd, preprocessYAML) {
     this.headers = telemetryHeader
     this.diskHeaders = diskSubHeader
@@ -102,6 +104,8 @@ export default class Telemetry {
    * Get the number of telemetry samples without loading data into memory.
    */
   samplesLength () {
+    if (this.samplesLength) return this.samplesLength
+
     const fd = fileDescriptor.get(this)
     const sampleLength = this.headers.bufLen
 
@@ -113,7 +117,9 @@ export default class Telemetry {
     const totalSampleBytes = fileSize - this.headers.bufOffset
     const sampleCount = Math.floor(totalSampleBytes / sampleLength)
 
-    return Math.max(0, sampleCount)
+    const samplesLength = Math.max(0, sampleCount)
+    this.samplesLength = samplesLength
+    return samplesLength
   }
 
   /**
@@ -125,7 +131,7 @@ export default class Telemetry {
   sampleAt (index) {
     const fd = fileDescriptor.get(this)
     const sampleLength = this.headers.bufLen
-    const sampleCount = this.samplesLength()
+    const sampleCount = this.samplesLength ?? this.samplesLength()
 
     if (index < 0 || index >= sampleCount) {
       throw new Error(`Sample index ${index} is out of bounds. Valid range: 0 to ${sampleCount - 1}`)
