@@ -3,9 +3,13 @@ import yaml from 'js-yaml'
 
 import TelemetrySample from './telemetry-sample'
 import telemetryFileLoader from './utils/telemetry-file-loader'
+import { promisify } from 'util'
 
 const variableHeaders = new WeakMap()
 const fileDescriptor = new WeakMap()
+
+const readAsync = promisify(fs.read)
+const fsStatAsync = promisify(fs.fstat)
 
 /**
  * iRacing Telemetry
@@ -69,7 +73,7 @@ export default class Telemetry {
     const sampleLength = this.headers.bufLen
 
     // Get file stats to determine total file size
-    const stats = await fs.promises.fstat(fd)
+    const stats = await fsStatAsync(fd)
     const fileSize = stats.size
 
     // Calculate total bytes available for samples
@@ -82,7 +86,7 @@ export default class Telemetry {
 
     // Read entire buffer from start of samples
     const entireBuffer = Buffer.alloc(totalSampleBytes)
-    const bytesRead  = await fs.promises.read(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
+    const bytesRead = await readAsync(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
 
     if (bytesRead !== totalSampleBytes) {
       throw new Error(`Failed to read expected bytes. Expected: ${totalSampleBytes}, Read: ${bytesRead}`)
@@ -110,7 +114,7 @@ export default class Telemetry {
     const sampleLength = this.headers.bufLen
 
     // Get file stats to determine total file size
-    const stats = await fs.promises.fstat(fd)
+    const stats = await fsStatAsync(fd)
     const fileSize = stats.size
 
     // Calculate total bytes available for samples
@@ -142,7 +146,7 @@ export default class Telemetry {
 
     // Read only the buffer for this specific sample
     const sampleBuffer = Buffer.alloc(sampleLength)
-    const bytesRead = await fs.promises.read(fd, sampleBuffer, 0, sampleLength, sampleOffset)
+    const { bytesRead } = await readAsync(fd, sampleBuffer, 0, sampleLength, sampleOffset)
 
     if (bytesRead !== sampleLength) {
       throw new Error(`Failed to read expected bytes for sample ${index}. Expected: ${sampleLength}, Read: ${bytesRead}`)
