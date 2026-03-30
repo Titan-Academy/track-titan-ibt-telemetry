@@ -64,12 +64,12 @@ export default class Telemetry {
   /**
    * Get all telemetry samples.
    */
-  samples () {
+  async samples () {
     const fd = fileDescriptor.get(this)
     const sampleLength = this.headers.bufLen
 
     // Get file stats to determine total file size
-    const stats = fs.fstatSync(fd)
+    const stats = await fs.promises.fstat(fd)
     const fileSize = stats.size
 
     // Calculate total bytes available for samples
@@ -82,7 +82,7 @@ export default class Telemetry {
 
     // Read entire buffer from start of samples
     const entireBuffer = Buffer.alloc(totalSampleBytes)
-    const bytesRead = fs.readSync(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
+    const bytesRead  = await fs.promises.read(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
 
     if (bytesRead !== totalSampleBytes) {
       throw new Error(`Failed to read expected bytes. Expected: ${totalSampleBytes}, Read: ${bytesRead}`)
@@ -103,14 +103,14 @@ export default class Telemetry {
   /**
    * Get the number of telemetry samples without loading data into memory.
    */
-  getSamplesLength () {
+  async getSamplesLength () {
     if (this.samplesLength) return this.samplesLength
 
     const fd = fileDescriptor.get(this)
     const sampleLength = this.headers.bufLen
 
     // Get file stats to determine total file size
-    const stats = fs.fstatSync(fd)
+    const stats = await fs.promises.fstat(fd)
     const fileSize = stats.size
 
     // Calculate total bytes available for samples
@@ -124,14 +124,14 @@ export default class Telemetry {
 
   /**
    * Get a single telemetry sample at the specified index without loading all data into memory.
-   * 
+   *
    * @param {number} index - The zero-based index of the sample to retrieve
    * @return {TelemetrySample} The telemetry sample at the specified index
    */
-  sampleAt (index) {
+  async sampleAt (index) {
     const fd = fileDescriptor.get(this)
     const sampleLength = this.headers.bufLen
-    const sampleCount = this.samplesLength ? this.samplesLength : this.samplesLength()
+    const sampleCount = this.samplesLength ? this.samplesLength : await this.getSamplesLength()
 
     if (index < 0 || index >= sampleCount) {
       throw new Error(`Sample index ${index} is out of bounds. Valid range: 0 to ${sampleCount - 1}`)
@@ -142,7 +142,7 @@ export default class Telemetry {
 
     // Read only the buffer for this specific sample
     const sampleBuffer = Buffer.alloc(sampleLength)
-    const bytesRead = fs.readSync(fd, sampleBuffer, 0, sampleLength, sampleOffset)
+    const bytesRead = await fs.promises.read(fd, sampleBuffer, 0, sampleLength, sampleOffset)
 
     if (bytesRead !== sampleLength) {
       throw new Error(`Failed to read expected bytes for sample ${index}. Expected: ${sampleLength}, Read: ${bytesRead}`)
