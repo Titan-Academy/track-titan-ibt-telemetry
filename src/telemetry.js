@@ -82,7 +82,7 @@ export default class Telemetry {
 
     // Read entire buffer from start of samples
     const entireBuffer = Buffer.alloc(totalSampleBytes)
-    const { bytesRead } = await fs.promises.read(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
+    const bytesRead  = await fs.promises.read(fd, entireBuffer, 0, totalSampleBytes, this.headers.bufOffset)
 
     if (bytesRead !== totalSampleBytes) {
       throw new Error(`Failed to read expected bytes. Expected: ${totalSampleBytes}, Read: ${bytesRead}`)
